@@ -23,11 +23,14 @@ class TaskVerification {
 		$this->tab2 = explode("data-clipboard-text=\"", $this->tab1[1]);
 		$this->tab3 = explode("\" src=\"", $this->tab2[1]);
 		$this->GetPlayerID64 = $this->tab3[0];
+		$this->PlayerID64 = $this->GetPlayerID64;
 		return $this->GetPlayerID64;
 	}
 	
+	public $PlayerID64;
+	
  private function getTimeJSON() {
-		$this->SteamAPIUrl = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=BB63045D0A5A74428B323EC16FB987EF&steamid=".$this->getPlayerID64()."&format=json";
+		$this->SteamAPIUrl = "http://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=BB63045D0A5A74428B323EC16FB987EF&steamid=".$this->PlayerID64."&format=json";
 		$this->curl = curl_init();
 		curl_setopt($this->curl,CURLOPT_URL,$this->SteamAPIUrl);
 		curl_setopt($this->curl,CURLOPT_RETURNTRANSFER,1);
@@ -49,7 +52,7 @@ class TaskVerification {
 	}
 	
 	private function getAchievementsJSON() {
-		$this->SteamAPIUrl = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=690610&key=BB63045D0A5A74428B323EC16FB987EF&steamid=".$this->getPlayerID64();
+		$this->SteamAPIUrl = "http://api.steampowered.com/ISteamUserStats/GetPlayerAchievements/v0001/?appid=690610&key=BB63045D0A5A74428B323EC16FB987EF&steamid=".$this->PlayerID64;
 		$this->curl = curl_init();
 		curl_setopt($this->curl,CURLOPT_URL,$this->SteamAPIUrl);
 		curl_setopt($this->curl,CURLOPT_RETURNTRANSFER,1);
@@ -59,30 +62,30 @@ class TaskVerification {
 		return $this->json; 
 	}
 	
-	public function getAchievements($AchievementName) {
+	public function getAchievements($AchievementTasks) {
 		$this->AchievementsArray = $this->getAchievementsJSON()->playerstats->achievements;
+		$this->getFeedback = "";
 		if(!empty($this->AchievementsArray)){
-			foreach ($this->AchievementsArray as $table) {
-				if($table->apiname == $AchievementName){
-					return $table->achieved;
+			foreach($AchievementTasks as $AchievementName){
+				foreach ($this->AchievementsArray as $table) {
+					if($table->apiname == $AchievementName){
+						$this->getFeedback .= "<br />Achievement ".$AchievementName." = ".$table->achieved;
+					}
 				}
 			}
 		}
+		return $this->getFeedback;
 	}
 	
-	public function getFeedback() {
-		$this->playTime = $this->getPlayTime();
-		$this->Achiev1 = $this->getAchievements("JudgeBronze");
-		$this->Achiev2 = $this->getAchievements("AssassinBronze");
-		
+	public function getFeedback($Array) {
 		return ("User ID64: ".$this->getPlayerID64()."<br /> 
-		Playtime is: ".$this->playTime." minutes <br />
-		Achievement JudgeBronze = ".$this->Achiev1."<br />
-		Achievement AssassinBronze = ".$this->Achiev2);
+		Playtime is: ".$this->getPlayTime()." minutes
+		".$this->getAchievements($Array));
 	}
 }
 
 $v = new TaskVerification;
-echo($v->getFeedback());
-	
+$Achievements = Array("JudgeBronze", "AssassinBronze", "ArtistBronze", "ProgrammerBronze", "GreedSilver");
+echo($v->getFeedback($Achievements));
+
 ?>
